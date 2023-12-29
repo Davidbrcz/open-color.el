@@ -41,8 +41,48 @@
 
    or just /M-x babashka-tasks RET update/ if there's [[https://github.com/licht1stein/babashka.el][babashka.el]] available.
 
+** Support for [[https://github.com/emacsmirror/rainbow-mode][Rainbow mode]]
+
+It's possible to add support for rainbow-mode by using the mode `rainbow-keywords-hook`, as shown below.
+
+
+   #+BEGIN_SRC emacs-lisp
+     ;; The core idea is simply to match a string, and retrieve the underlying lisp object with that name to use its value for colortizaton.
+     (defun rainbow-colorize-open-colors()
+       (let* (
+              (color-name (match-string-no-properties 1))
+              (color-object (intern color-name))
+              )
+         ;; For some reasons, the regex doesn't always match the number at the end, so check if the object is actually bound
+         (if (boundp color-object)
+             (let ((color-value (symbol-value color-object)))
+               (rainbow-colorize-match color-value)
+               )
+           ))
+       )
+
+     (defvar open-colors-rainbow-font-lock-keywords
+       '(
+         ("\\<\\(open-color-[a-z]*-[0-9]\\)\\>" 1 (rainbow-colorize-open-colors) )
+         ("\\<\\(open-color-[a-z]*\\)\\>" 1 (rainbow-colorize-open-colors) ) 
+         )
+       "Font-lock keywords to add for open-color colors.")
+
+     (defun add-open-color()
+       (if rainbow-mode
+             (font-lock-add-keywords nil open-colors-rainbow-font-lock-keywords 'end)
+         (font-lock-remove-keywords nil open-colors-rainbow-font-lock-keywords)
+         )
+       )
+
+     ;; Set color string's background with its value 
+     (use-package rainbow-mode
+       :config
+       (setq rainbow-keywords-hook 'add-open-color)
+       )
+   #+END_SRC
+   
 ** TODO To do
-   - Add [[https://github.com/emacsmirror/rainbow-mode][Rainbow mode]] support.
    - Extract version information
    - run generate.clj from workflows
    - Add to MELPA
